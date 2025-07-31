@@ -42,20 +42,23 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',  # Optional, for logout
-
+    'corsheaders',  
     # Local apps
     'accounts',
     'profiles',
     'projects',
+    'watchlist',
 
 ]
+
+
+AUTH_USER_MODEL = 'accounts.CustomUser'
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',  # React default port
 ]
 
 MIDDLEWARE = [
-    'middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -117,6 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
 
 
 # Internationalization
