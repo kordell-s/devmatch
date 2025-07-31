@@ -1,28 +1,20 @@
-from rest_framework import generics
+from rest_framework import viewsets, permissions
 from .models import CustomUser
-from rest_framework.permissions import AllowAny
-from rest_framework.serializers import ModelSerializer
+from .serializer import CustomUserSerializer, RegisterUserSerializer
 
 # Create your views here.
 
-class RegisterSerializer(ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ('username', 'password', 'email', 'role')
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        user = CustomUser.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
-            email=validated_data.get('email', ''),
-            role=validated_data.get('role', 'developer')
-        )
-        return user
-    
-class RegisterView(generics.CreateAPIView):
+class RegisterUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
-    permission_classes = [AllowAny]
-    serializer_class = RegisterSerializer
+    serializer_class = RegisterUserSerializer  # This serializer handles user registration
+    permission_classes = [permissions.AllowAny] 
+
+
+class CurrentUserViewSet(viewsets.ModelViewSet):     
+    serializer_class = CustomUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user     # This will return the currently authenticated user
 
 

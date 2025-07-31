@@ -1,4 +1,4 @@
-from .models import Developer
+from .models import Developer, Recruiter
 from rest_framework import serializers
 from accounts.models import CustomUser
 
@@ -6,7 +6,7 @@ from accounts.models import CustomUser
 class CustomUserNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'role', 'first_name', 'last_name']
+        fields = ['id', 'username', 'profile_photo', 'email', 'role', 'first_name', 'last_name']
         read_only_fields = fields
 
 
@@ -16,7 +16,19 @@ class DeveloperSerializer(serializers.ModelSerializer):
     class Meta:
         model = Developer
         fields = [
-            'id', 'user', 'bio', 'location', 'skills', 'resume',
+            'id', 'user', 'profile_picture','bio', 'location', 'skills', 'resume',
             'video_intro', 'github_url', 'experience', 'portfolio_url'
+        ]
+        read_only_fields = ['id', 'user']
+
+
+class RecruiterSerializer(serializers.ModelSerializer):
+    user = CustomUserNestedSerializer(read_only=True)
+
+    class Meta:
+        model = Recruiter
+        fields = [
+            'id', 'user', 'profile_picture', 'bio', 'company_name', 'company_website', 
+            'location', 'phone_number'
         ]
         read_only_fields = ['id', 'user']
