@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ developer.user.username }} - Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>{{ developer.user.first_name }} {{ developer.user.last_name }}</h1>
+        <p><strong>Username:</strong> {{ developer.user.username }}</p>
+        <p><strong>Email:</strong> {{ developer.user.email }}</p>
+        <p><strong>Location:</strong> {{ developer.location }}</p>
+        <p><strong>Bio:</strong> {{ developer.bio }}</p>
+
+        <h4>Skills</h4>
+        <ul>
+            {% for skill in developer.skills %}
+            <li>{{ skill }}</li>
+            {% endfor %}
+        </ul>
+
+        <h4>Projects</h4>
+        <div class="list-group">
+            {% for project in developer.user.projects.all %}
+            <div class="list-group-item">
+                <h5>{{ project.title }}</h5>
+                <p>{{ project.description }}</p>
+                <a href="{{ project.github_url }}" target="_blank">GitHub</a>
+                {% if project.live_url %}
+                | <a href="{{ project.live_url }}" target="_blank">Live Demo</a>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p>No projects listed.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <img src="{% if developer.profile_picture %}{{ developer.profile_picture.url }}{% else %}/static/images/default-profile.png{% endif %}"
+            alt="{{ developer.user.username }}" class="rounded-circle mb-3"
+            style="width: 150px; height: 150px; object-fit: cover;">
+        <a href="{{ developer.github_url }}" target="_blank" class="btn btn-outline-dark w-100 mb-3">
+            <i class="bi bi-github"></i> GitHub
+        </a>
+        <a href="{{ developer.portfolio_url }}" target="_blank" class="btn btn-outline-primary w-100">Portfolio</a>
+    </div>
+</div>
+{% endblock %}

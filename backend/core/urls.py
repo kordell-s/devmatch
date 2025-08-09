@@ -18,21 +18,30 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from core.views import home
+from accounts.views import register_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.contrib.auth.views import LoginView, LogoutView
 
 urlpatterns = [
     path('', home, name='home'),  # Home view
     path("admin/", admin.site.urls),
 
-    # Include app URLs
+    # Authentication URLs
+    path('login/', LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('register/', register_view, name='register'),  # Register view
+
+    # API URLs
     path('api/accounts/', include('accounts.urls')),
     path('api/watchlist/', include('watchlist.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/profiles/', include('profiles.urls')),
 
-    # JWT login/refresh
+    # HTML template views
+    path('developers/', include('profiles.urls')),
+    path('watchlist/', include('watchlist.urls')),
 
+    # JWT login/refresh
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-   
 ]

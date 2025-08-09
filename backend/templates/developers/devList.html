@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Developer List{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Developer List</h1>
+
+<!-- Search Bar -->
+<div class="row mb-4">
+    <div class="col-md-8 mx-auto">
+        <form method="GET" action="{% url 'developers-list' %}">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control"
+                    placeholder="Search developers by name, bio, or skills..." value="{{ request.GET.search }}">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                {% if request.GET.search %}
+                <a href="{% url 'developers-list' %}" class="btn btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Skills Filter Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5>Filter by Skills:</h5>
+        <div class="d-flex flex-wrap gap-2">
+            {% for skill in all_skills %}
+            <a href="?skill={{ skill }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+                class="badge {% if request.GET.skill == skill %}bg-primary{% else %}bg-secondary{% endif %} text-decoration-none p-2">
+                {{ skill }}
+            </a>
+            {% endfor %}
+            {% if request.GET.skill %}
+            <a href="{% url 'developers-list' %}{% if request.GET.search %}?search={{ request.GET.search }}{% endif %}"
+                class="badge bg-danger text-decoration-none p-2">
+                Clear Filter
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Active Filters Display -->
+{% if request.GET.search or request.GET.skill %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <strong>Active Filters:</strong>
+            {% if request.GET.search %}
+            Search: "{{ request.GET.search }}"
+            {% endif %}
+            {% if request.GET.skill %}
+            {% if request.GET.search %} | {% endif %}
+            Skill: "{{ request.GET.skill }}"
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Developer Cards -->
+<div class="row">
+    {% for developer in developers %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <!-- Profile Picture -->
+                <img src="{% if developer.user.profile_photo %}{{ developer.user.profile_photo.url }}{% else %}/static/images/default-profile.png{% endif %}"
+                    alt="{{ developer.user.username }}" class="rounded-circle mb-3"
+                    style="width: 100px; height: 100px; object-fit: cover;">
+
+                <!-- Developer Name -->
+                <h5 class="card-title">{{ developer.user.first_name }} {{ developer.user.last_name }}</h5>
+
+                <!-- GitHub Link -->
+                <p>
+                    <a href="{{ developer.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
+                        <i class="bi bi-github"></i> GitHub
+                    </a>
+                </p>
+
+                <!-- Bio -->
+                <p class="card-text">{{ developer.bio|truncatewords:20 }}</p>
+
+                <!-- Skills as Tags -->
+                <div>
+                    {% for skill in developer.skills %}
+                    <span class="badge bg-primary">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- View Profile Button -->
+                <a href="{% url 'devDetails' developer.id %}" class="btn btn-outline-primary mt-3">View
+                    Profile</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning text-center">
+            <h4>No developers found</h4>
+            <p>{% if request.GET.search or request.GET.skill %}Try adjusting your search criteria or filters.{% else
+                %}No developers are currently available.{% endif %}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -28,7 +28,6 @@ class RecruiterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recruiter
         fields = [
-            'id', 'user', 'profile_picture', 'bio', 'company_name', 'company_website', 
-            'location', 'phone_number'
+            'id', 'user', 'company_name', 'company_website', 'company_description'
         ]
         read_only_fields = ['id', 'user']

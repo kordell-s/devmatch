@@ -10,3 +10,4 @@ class CustomUser(AbstractUser):
         ('recruiter', 'Recruiter'),
     )
     role = models.CharField(max_length=20, choices=USER_ROLES, default='developer')
+    profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Watchlist{% endblock %}
+
+{% block content %}
+<h1>Your Watchlist</h1>
+<ul>
+    {% for item in watchlist_items %}
+    <li>
+        <strong>{{ item.developer.user.username }}</strong> - {{ item.developer.bio }}
+        <a href="{% url 'devDetails' item.developer.id %}">View Profile</a>
+    </li>
+    {% empty %}
+    <p>Your watchlist is empty.</p>
+    {% endfor %}
+</ul>
+{% endblock %}
