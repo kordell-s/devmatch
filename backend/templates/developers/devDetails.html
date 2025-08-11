@@ -22,6 +22,8 @@
         <div class="list-group">
             {% for project in developer.user.projects.all %}
             <div class="list-group-item">
+                <img src="{{ project.image.url }}" alt="{{ project.title }}" class="img-thumbnail mb-2"
+                    style="max-width: 100px;">
                 <h5>{{ project.title }}</h5>
                 <p>{{ project.description }}</p>
                 <a href="{{ project.github_url }}" target="_blank">GitHub</a>
@@ -43,6 +45,14 @@
             <i class="bi bi-github"></i> GitHub
         </a>
         <a href="{{ developer.portfolio_url }}" target="_blank" class="btn btn-outline-primary w-100">Portfolio</a>
+        {% if user.is_authenticated and user.user_type == 'recruiter' %}
+        <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-success mt-2">
+                <i class="bi bi-bookmark"></i> Save to Watchlist
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

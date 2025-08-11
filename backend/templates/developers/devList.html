@@ -96,6 +96,14 @@
                 <!-- View Profile Button -->
                 <a href="{% url 'devDetails' developer.id %}" class="btn btn-outline-primary mt-3">View
                     Profile</a>
+                {% if user.is_authenticated and user.user_type == 'recruiter' %}
+                <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success mt-2">
+                        <i class="bi bi-bookmark"></i> Save to Watchlist
+                    </button>
+                </form>
+                {% endif %}
             </div>
         </div>
     </div>

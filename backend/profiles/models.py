@@ -11,7 +11,7 @@ class Developer(models.Model):
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
     video_intro = models.FileField(upload_to='video_intros/', blank=True, null=True)
     github_url = models.URLField(blank=True, null=True)
-    experience = models.IntegerField(help_text="Years of experience")
+    experience = models.IntegerField(help_text="Years of experience", default=0)
     portfolio_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
