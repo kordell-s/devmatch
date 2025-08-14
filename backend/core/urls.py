@@ -21,6 +21,7 @@ from core.views import home
 from accounts.views import register_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib.auth.views import LoginView, LogoutView
+from profiles.views import developer_search_ajax
 
 urlpatterns = [
     path('', home, name='home'),  # Home view
@@ -36,6 +37,7 @@ urlpatterns = [
     path('api/watchlist/', include('watchlist.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/profiles/', include('profiles.urls')),
+    path('api/developers/search/', developer_search_ajax, name='developer-search-ajax'),
 
     # HTML template views
     path('developers/', include('profiles.urls')),

@@ -1,0 +1,53 @@
+{% for developer in developers %}
+<div class="col-md-4 mb-4">
+    <div class="card h-100">
+        <div class="card-body text-center">
+            <!-- Profile Picture -->
+            <img src="{% if developer.profile_picture %}{{ developer.profile_picture.url }}{% else %}/static/images/default-profile.png{% endif %}"
+                alt="{{ developer.user.username }}" class="rounded-circle mb-3"
+                style="width: 100px; height: 100px; object-fit: cover;">
+
+            <!-- Developer Name -->
+            <h5 class="card-title">{{ developer.user.first_name }} {{ developer.user.last_name }}</h5>
+
+            <!-- GitHub Link -->
+            {% if developer.github_url %}
+            <p>
+                <a href="{{ developer.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-github"></i> GitHub
+                </a>
+            </p>
+            {% endif %}
+
+            <!-- Bio -->
+            <p class="card-text">{{ developer.bio|truncatewords:20 }}</p>
+
+            <!-- Skills as Tags -->
+            <div>
+                {% for skill in developer.skills %}
+                <span class="badge bg-primary me-2">{{ skill }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- View Profile Button -->
+            <a href="{% url 'devDetails' developer.id %}" class="btn btn-outline-primary mt-3">View Profile</a>
+
+            {% if user.is_authenticated and user.user_type == 'recruiter' %}
+            <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline mt-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-bookmark"></i> Save
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="col-12">
+    <div class="alert alert-warning text-center">
+        <h4>No developers found</h4>
+        <p>No developers are currently available.</p>
+    </div>
+</div>
+{% endfor %}

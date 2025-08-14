@@ -8,18 +8,14 @@
 <!-- Search Bar -->
 <div class="row mb-4">
     <div class="col-md-8 mx-auto">
-        <form method="GET" action="{% url 'developers-list' %}">
-            <div class="input-group">
-                <input type="text" name="search" class="form-control"
-                    placeholder="Search developers by name, bio, or skills..." value="{{ request.GET.search }}">
-                <button class="btn btn-primary" type="submit">
-                    <i class="bi bi-search"></i> Search
-                </button>
-                {% if request.GET.search %}
-                <a href="{% url 'developers-list' %}" class="btn btn-outline-secondary">Clear</a>
-                {% endif %}
-            </div>
-        </form>
+        <div class="input-group">
+            <input type="text" id="search-input" class="form-control"
+                placeholder="Search developers by name, bio, or skills..." value="{{ request.GET.search }}">
+            <button class="btn btn-primary" type="button" id="search-btn">
+                <i class="bi bi-search"></i> Search
+            </button>
+            <button class="btn btn-outline-secondary" type="button" id="clear-btn">Clear</button>
+        </div>
     </div>
 </div>
 
@@ -27,94 +23,210 @@
 <div class="row mb-4">
     <div class="col-12">
         <h5>Filter by Skills:</h5>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2" id="skills-filter">
             {% for skill in all_skills %}
-            <a href="?skill={{ skill }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
-                class="badge {% if request.GET.skill == skill %}bg-primary{% else %}bg-secondary{% endif %} text-decoration-none p-2">
+            <button class="badge bg-secondary skill-filter text-decoration-none p-2 border-0" data-skill="{{ skill }}">
                 {{ skill }}
-            </a>
+            </button>
             {% endfor %}
-            {% if request.GET.skill %}
-            <a href="{% url 'developers-list' %}{% if request.GET.search %}?search={{ request.GET.search }}{% endif %}"
-                class="badge bg-danger text-decoration-none p-2">
-                Clear Filter
-            </a>
-            {% endif %}
         </div>
     </div>
 </div>
 
+<!--Loading Spinner-->
+<div id="loading-spinner" class="text-center mb-4" style="display: none;">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+
 <!-- Active Filters Display -->
-{% if request.GET.search or request.GET.skill %}
-<div class="row mb-3">
+<div id="active-filters" class="row mb-3 d-none">
     <div class="col-12">
         <div class="alert alert-info">
             <strong>Active Filters:</strong>
-            {% if request.GET.search %}
-            Search: "{{ request.GET.search }}"
-            {% endif %}
-            {% if request.GET.skill %}
-            {% if request.GET.search %} | {% endif %}
-            Skill: "{{ request.GET.skill }}"
-            {% endif %}
+            <span id="filter-text"></span>
         </div>
     </div>
 </div>
-{% endif %}
 
-<!-- Developer Cards -->
-<div class="row">
-    {% for developer in developers %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <!-- Profile Picture -->
-                <img src="{% if developer.user.profile_photo %}{{ developer.user.profile_photo.url }}{% else %}/static/images/default-profile.png{% endif %}"
-                    alt="{{ developer.user.username }}" class="rounded-circle mb-3"
-                    style="width: 100px; height: 100px; object-fit: cover;">
+<!-- Developer Cards Container -->
+<div id="developers-container" class="row">
+    {% include 'developers/devTemplate.html' %}
+</div>
 
-                <!-- Developer Name -->
-                <h5 class="card-title">{{ developer.user.first_name }} {{ developer.user.last_name }}</h5>
+<!-- No Results Message -->
+<div id="no-results" class="col-12 d-none">
+    <div class="alert alert-warning text-center">
+        <h4>No developers found</h4>
+        <p>Try adjusting your search criteria or filters.</p>
+    </div>
+</div>
 
-                <!-- GitHub Link -->
-                <p>
-                    <a href="{{ developer.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
-                        <i class="bi bi-github"></i> GitHub
-                    </a>
-                </p>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const skillFilters = document.querySelectorAll('.skill-filter');
+        const developersContainer = document.getElementById('developers-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const activeFilters = document.getElementById('active-filters');
+        const filterText = document.getElementById('filter-text');
+        const noResults = document.getElementById('no-results');
 
-                <!-- Bio -->
-                <p class="card-text">{{ developer.bio|truncatewords:20 }}</p>
+        let currentSearch = '';
+        let currentSkill = '';
 
-                <!-- Skills as Tags -->
-                <div>
-                    {% for skill in developer.skills %}
-                    <span class="badge bg-primary">{{ skill }}</span>
-                    {% endfor %}
+        //search function
+        function searchDevelopers() {
+            const searchTerm = searchInput.value.trim();
+            currentSearch = searchTerm;
+            performSearch();
+        }
+
+        //Skill filter function
+        function filterBySkill(skill) {
+            //reset skill buttons
+            skillFilters.forEach(btn => {
+                btn.classList.remove('bg-primary');
+                btn.classList.add('bg-secondary');
+            });
+
+            if (currentSkill === skill) {
+                currentSkill = '';
+            } else {
+                currentSkill = skill;
+                event.target.classList.remove('bg-secondary');
+                event.target.classList.add('bg-primary');
+            }
+            performSearch();
+        }
+
+        //perform ajax search
+        function performSearch() {
+            showLoading();
+
+            const params = new URLSearchParams();
+            if (currentSearch) params.append('search', currentSearch);
+            if (currentSkill) params.append('skill', currentSkill);
+
+            fetch(`/api/developers/search/?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    updateResults(data.developers);
+                    updateActiveFilters();
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error fetching developers:', error);
+                });
+        }
+
+        //update results
+        function updateResults(developers) {
+            if (developers.length === 0) {
+                developersContainer.classList.add(`d-none`);
+                noResults.classList.remove('d-none');
+            } else {
+                developersContainer.classList.remove('d-none');
+                noResults.classList.add('d-none');
+                developersContainer.innerHTML = '';
+                developers.forEach(developer => {
+                    developersContainer.innerHTML += createDeveloperCard(developer);
+                });
+            }
+        }
+
+        //create developer card html
+        function createDeveloperCard(developer) {
+            const profilePhoto = developer.profile_picture || '/static/images/default-profile.png';
+            const skills = developer.skills.map(skill => `<span class="badge bg-primary me-2">${skill}</span>`).join('');
+
+            return `
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <img src="${profilePhoto}" alt="${developer.username}" 
+                         class="rounded-circle mb-3" 
+                         style="width: 100px; height: 100px; object-fit: cover;">
+                    <h5 class="card-title">${developer.first_name} ${developer.last_name}</h5>
+                    ${developer.github_url ?
+                    `<p><a href="${developer.github_url}" target="_blank" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-github"></i> GitHub
+                        </a></p>` : ''
+                }
+                    <p class="card-text">${developer.bio || ''}</p>
+                    <div>${skills}</div>
+                    <a href="/developers/${developer.id}/" class="btn btn-outline-primary mt-3">View Profile</a>
                 </div>
-
-                <!-- View Profile Button -->
-                <a href="{% url 'devDetails' developer.id %}" class="btn btn-outline-primary mt-3">View
-                    Profile</a>
-                {% if user.is_authenticated and user.user_type == 'recruiter' %}
-                <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-success mt-2">
-                        <i class="bi bi-bookmark"></i> Save to Watchlist
-                    </button>
-                </form>
-                {% endif %}
             </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="alert alert-warning text-center">
-            <h4>No developers found</h4>
-            <p>{% if request.GET.search or request.GET.skill %}Try adjusting your search criteria or filters.{% else
-                %}No developers are currently available.{% endif %}</p>
-        </div>
-    </div>
-    {% endfor %}
-</div>
+        </div>`;
+        }
+
+        //update active filters display
+        function updateActiveFilters() {
+            let filters = [];
+            if (currentSearch) filters.push(`Search: "${currentSearch}"`);
+            if (currentSkill) filters.push(`Skill: "${currentSkill}"`);
+            if (filters.length > 0) {
+                filterText.textContent = filters.join(' | ');
+                activeFilters.classList.remove('d-none');
+            } else {
+                activeFilters.classList.add('d-none');
+            }
+        }
+
+        //show/hide loading
+
+        function showLoading() {
+            loadingSpinner.classList.remove('d-none');
+            developersContainer.classList.add('d-none');
+            noResults.classList.add('d-none');
+        }
+
+        function hideLoading() {
+            loadingSpinner.classList.add('d-none');
+            developersContainer.classList.remove('d-none');
+        }
+
+        //clear all filters
+
+        function clearFilters() {
+            currentSearch = '';
+            currentSkill = '';
+            searchInput.value = '';
+            skillFilters.forEach(btn => {
+                btn.classList.remove('bg-primary');
+                btn.classList.add('bg-secondary');
+            });
+            performSearch();
+        }
+
+        //Event Listeners
+        searchBtn.addEventListener('click', searchDevelopers);
+        clearBtn.addEventListener('click', clearFilters);
+        searchInput.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchDevelopers();
+            }
+        });
+        // Debounced search on input
+        let searchTimeout;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchDevelopers, 500);
+        });
+
+        skillFilters.forEach(btn => {
+            btn.addEventListener('click', function () {
+                filterBySkill(this.dataset.skill);
+            });
+        });
+    });
+
+</script>
 {% endblock %}
