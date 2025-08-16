@@ -22,13 +22,10 @@ class Project(models.Model):
     live_url = models.URLField(blank=True, null=True)
     description = models.TextField()
     technologies = models.JSONField(default=list, blank=True)
-    project_image = models.ImageField(upload_to='project_images/', blank=True, null=True)
     owner = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE, related_name='projects')
     project_image = models.ImageField(upload_to='project_images/', blank=True, 
                                       null=True, validators=[validate_project_image_size], help_text="Upload a project image (max 5MB)")
     
-    owner = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE, related_name='projects')
-
     def __str__(self):
         return self.title
 

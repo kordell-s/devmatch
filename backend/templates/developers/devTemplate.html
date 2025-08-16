@@ -30,7 +30,7 @@
             </div>
 
             <!-- View Profile Button -->
-            <a href="{% url 'devDetails' developer.id %}" class="btn btn-outline-primary mt-3">View Profile</a>
+            <a href="{% url 'developer-detail' developer.id %}" class="btn btn-outline-primary mt-3">View Profile</a>
 
             {% if user.is_authenticated and user.user_type == 'recruiter' %}
             <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline mt-2">

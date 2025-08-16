@@ -10,7 +10,7 @@ router.register(r'developers', DeveloperViewSet, basename='developer')
 # Template URLs (no 'api/' prefix)
 urlpatterns = [
     path('list/', developer_list, name='developers-list'),
-    path('<int:pk>/', developer_detail, name='devDetails'),
+    path('<int:pk>/', developer_detail, name='developer-detail'),
     path('profile/edit/', views.edit_developer_profile, name='edit-developer-profile'),
 ]
 

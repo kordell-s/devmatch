@@ -61,6 +61,8 @@ def edit_developer_profile(request):
             developer = form.save(commit=False)
             developer.user = request.user  # Ensure the user is set
             developer.save()
+            if developer.profile_picture:
+                print(f"Profile picture URL: {developer.profile_picture.url}")
             
             messages.success(request, 'Your profile has been updated successfully!')
             return redirect('developer-detail', pk=developer.pk)

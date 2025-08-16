@@ -10,6 +10,8 @@
         <p><strong>Email:</strong> {{ developer.user.email }}</p>
         <p><strong>Location:</strong> {{ developer.location }}</p>
         <p><strong>Bio:</strong> {{ developer.bio }}</p>
+        <p><strong>Experience:</strong> {{ developer.experience }} years</p>
+
 
         <h4>Skills</h4>
         <div>
@@ -18,41 +20,134 @@
             {% endfor %}
         </div>
 
+        <!-- Resume Download -->
+        {% if developer.resume %}
+        <div class="mb-3">
+            <a href="{{ developer.resume.url }}" target="_blank" class="btn btn-outline-secondary">
+                <i class="bi bi-file-earmark-pdf"></i> Download Resume
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Video Introduction -->
+        {% if developer.video_intro %}
+        <div class="mb-3">
+            <h4>Video Introduction</h4>
+            <video controls style="max-width: 100%; height: auto;">
+                <source src="{{ developer.video_intro.url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        {% endif %}
+
         <h4>Projects</h4>
-        <div class="list-group">
+        <div class="row">
             {% for project in developer.user.projects.all %}
-            <div class="list-group-item">
-                <img src="{{ project.project_image.url }}" alt="{{ project.title }}" class="img-thumbnail mb-2"
-                    style="max-width: 100px;">
-                <h5>{{ project.title }}</h5>
-                <p>{{ project.description }}</p>
-                <a href="{{ project.github_url }}" target="_blank">GitHub</a>
-                {% if project.live_url %}
-                | <a href="{{ project.live_url }}" target="_blank">Live Demo</a>
-                {% endif %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <!-- Project Image - FIXED: Added check for image existence -->
+                    {% if project.project_image %}
+                    <img src="{{ project.project_image.url }}" class="card-img-top" alt="{{ project.title }}"
+                        style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                        style="height: 200px;">
+                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <h5 class="card-title">{{ project.title }}</h5>
+                        <p class="card-text">{{ project.description|truncatewords:20 }}</p>
+
+                        {% if project.technologies %}
+                        <div class="mb-2">
+                            {% for tech in project.technologies %}
+                            <span class="badge bg-secondary me-1">{{ tech }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="btn-group w-100" role="group">
+                            {% if project.github_url %}
+                            <a href="{{ project.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
+                                <i class="bi bi-github"></i> Code
+                            </a>
+                            {% endif %}
+                            {% if project.live_url %}
+                            <a href="{{ project.live_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-up-right-square"></i> Live Demo
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
             {% empty %}
-            <p>No projects listed.</p>
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p class="mb-0">No projects listed yet.</p>
+                </div>
+            </div>
             {% endfor %}
         </div>
     </div>
 
     <div class="col-md-4">
-        <img src="{% if developer.profile_picture %}{{ developer.profile_picture.url }}{% else %}/static/images/default-profile.png{% endif %}"
-            alt="{{ developer.user.username }}" class="rounded-circle mb-3"
-            style="width: 150px; height: 150px; object-fit: cover;">
-        <a href="{{ developer.github_url }}" target="_blank" class="btn btn-outline-dark w-100 mb-3">
-            <i class="bi bi-github"></i> GitHub
-        </a>
-        <a href="{{ developer.portfolio_url }}" target="_blank" class="btn btn-outline-primary w-100">Portfolio</a>
-        {% if user.is_authenticated and user.user_type == 'recruiter' %}
-        <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-success mt-2">
-                <i class="bi bi-bookmark"></i> Save to Watchlist
-            </button>
-        </form>
-        {% endif %}
+        <!-- Profile Picture -->
+        <div class="text-center mb-4">
+            <img src="{% if developer.profile_picture %}{{ developer.profile_picture.url }}{% else %}https://via.placeholder.com/150x150/6c757d/ffffff?text=No+Photo{% endif %}"
+                alt="{{ developer.user.username }}" class="rounded-circle mb-3"
+                style="width: 150px; height: 150px; object-fit: cover;">
+        </div>
+
+        <!-- Contact Information -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Contact Info</h5>
+                <p><strong>Phone:</strong> {{ developer.phone_number|default:"N/A" }}</p>
+                <p><strong>LinkedIn:</strong>
+                    {% if developer.linkedin_url %}
+                    <a href="{{ developer.linkedin_url }}" target="_blank">{{ developer.linkedin_url }}</a>
+                    {% else %}
+                    N/A
+                    {% endif %}
+                </p>
+                <p><strong>Email:</strong> {{developer.email}} </p>
+
+
+                <!-- GitHub Link -->
+                {% if developer.github_url %}
+                <a href="{{ developer.github_url }}" target="_blank" class="btn btn-outline-dark w-100 mb-2">
+                    <i class="bi bi-github"></i> GitHub
+                </a>
+                {% endif %}
+
+                <!-- Portfolio Link -->
+                {% if developer.portfolio_url %}
+                <a href="{{ developer.portfolio_url }}" target="_blank" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-globe"></i> Portfolio
+                </a>
+                {% endif %}
+
+                <!-- Watchlist Button (for recruiters) -->
+                {% if user.is_authenticated and user.user_type == 'recruiter' %}
+                <form method="POST" action="{% url 'add-to-watchlist' developer.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="bi bi-bookmark"></i> Save to Watchlist
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- Edit Profile Button (for profile owner) -->
+                {% if user.is_authenticated and user == developer.user %}
+                <a href="{% url 'edit-developer-profile' %}" class="btn btn-primary w-100 mt-2">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
