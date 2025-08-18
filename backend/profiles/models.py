@@ -37,6 +37,16 @@ class Developer(models.Model):
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     linkedin_url = models.URLField(blank=True, null=True)
+    current_company = models.CharField(max_length=255, blank=True, null=True)
+    current_title = models.CharField(max_length=255, blank=True, null=True)
+    emplyment_status = models.CharField(max_length=50, choices=[
+        ('employed', 'Employed'),
+        ('unemployed', 'Unemployed'),
+        ('freelancing', 'Freelancing'),
+        ('student', 'Student'),
+        ('other', 'Other')
+    ], default='unemployed')
+    education = models.CharField(max_length=255, blank=True, null=True)
     skills = models.JSONField(default=list, blank=True)
     resume = models.FileField(
         upload_to='resumes/', 
@@ -58,6 +68,18 @@ class Developer(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - Developer Profile"
+    
+
+    @property
+    def display_employment_info(self):
+        if self.current_company and self.current_title:
+            return f"{self.current_title} at {self.current_company}"
+        elif self.current_title:
+            return self.current_title
+        elif self.current_company:
+            return self.current_company
+        else:
+            return "No current employment information available."
     
 
     @property

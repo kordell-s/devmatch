@@ -3,7 +3,13 @@
 {% block title %}Developer List{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Developer List</h1>
+<div class="" container mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-5">
+            <h1 class="text-center">Find your Developer of Need</h1>
+        </div>
+    </div>
+</div>
 
 <!-- Search Bar -->
 <div class="row mb-4">
@@ -226,7 +232,212 @@
                 filterBySkill(this.dataset.skill);
             });
         });
+
+        // Watchlist functionality
+        function initializeWatchlistButtons() {
+            // Check watchlist status for all visible developers
+            const watchlistBtns = document.querySelectorAll('.watchlist-btn');
+            watchlistBtns.forEach(btn => {
+                const developerId = btn.dataset.developerId;
+                checkWatchlistStatus(developerId, btn);
+            });
+
+            // Add event listeners
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.watchlist-btn')) {
+                    const btn = e.target.closest('.watchlist-btn');
+                    const developerId = btn.dataset.developerId;
+                    const action = btn.dataset.action;
+
+                    if (action === 'add') {
+                        addToWatchlist(developerId, btn);
+                    } else {
+                        removeFromWatchlist(developerId, btn);
+                    }
+                }
+            });
+        }
+
+        function checkWatchlistStatus(developerId, btn) {
+            fetch(`/watchlist/check/${developerId}/`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    updateWatchlistButton(btn, data.is_in_watchlist);
+                })
+                .catch(error => console.error('Error checking watchlist status:', error));
+        }
+
+        function addToWatchlist(developerId, btn) {
+            // Add loading animation
+            const icon = btn.querySelector('.watchlist-icon');
+            const text = btn.querySelector('.watchlist-text');
+
+            icon.className = 'bi bi-hourglass-split';
+            text.textContent = 'Saving...';
+            btn.disabled = true;
+
+            fetch(`/watchlist/add/${developerId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Success animation
+                        icon.className = 'bi bi-check-circle-fill text-success';
+                        text.textContent = 'Saved!';
+
+                        setTimeout(() => {
+                            updateWatchlistButton(btn, true);
+                            showToast('Developer added to watchlist!', 'success');
+                        }, 1000);
+                    } else {
+                        // Error state
+                        icon.className = 'bi bi-exclamation-circle text-danger';
+                        text.textContent = 'Error';
+                        setTimeout(() => {
+                            updateWatchlistButton(btn, false);
+                            showToast(data.message || 'Failed to add to watchlist', 'error');
+                        }, 1500);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding to watchlist:', error);
+                    icon.className = 'bi bi-exclamation-circle text-danger';
+                    text.textContent = 'Error';
+                    setTimeout(() => {
+                        updateWatchlistButton(btn, false);
+                        showToast('Failed to add to watchlist', 'error');
+                    }, 1500);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+        }
+
+        function removeFromWatchlist(developerId, btn) {
+            const icon = btn.querySelector('.watchlist-icon');
+            const text = btn.querySelector('.watchlist-text');
+
+            icon.className = 'bi bi-hourglass-split';
+            text.textContent = 'Removing...';
+            btn.disabled = true;
+
+            fetch(`/watchlist/remove/${developerId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateWatchlistButton(btn, false);
+                        showToast('Developer removed from watchlist!', 'success');
+                    } else {
+                        updateWatchlistButton(btn, true);
+                        showToast(data.message || 'Failed to remove from watchlist', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error removing from watchlist:', error);
+                    updateWatchlistButton(btn, true);
+                    showToast('Failed to remove from watchlist', 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+        }
+
+        function updateWatchlistButton(btn, isInWatchlist) {
+            const icon = btn.querySelector('.watchlist-icon');
+            const text = btn.querySelector('.watchlist-text');
+
+            if (isInWatchlist) {
+                btn.className = 'btn btn-success watchlist-btn';
+                btn.dataset.action = 'remove';
+                icon.className = 'bi bi-bookmark-check-fill watchlist-icon';
+                text.textContent = 'Saved';
+            } else {
+                btn.className = 'btn btn-outline-success watchlist-btn';
+                btn.dataset.action = 'add';
+                icon.className = 'bi bi-bookmark-plus watchlist-icon';
+                text.textContent = 'Save';
+            }
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        function showToast(message, type) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 300px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    ${message}
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Initialize watchlist buttons when page loads
+        initializeWatchlistButtons();
+
+        // Re-initialize watchlist buttons after search results update
+        const originalUpdateResults = updateResults;
+        updateResults = function (developers) {
+            originalUpdateResults(developers);
+            setTimeout(initializeWatchlistButtons, 100);
+        };
     });
 
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        .watchlist-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .watchlist-btn:disabled {
+            opacity: 0.7;
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 {% endblock %}

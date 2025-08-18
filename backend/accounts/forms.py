@@ -27,3 +27,19 @@ class CustomUserCreationForm(UserCreationForm):
         if CustomUser.objects.filter(username=username).exists():
             raise forms.ValidationError("A user with this username already exists.")
         return username
+
+class DeveloperRegistrationForm(CustomUserCreationForm):
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'developer'
+        if commit:
+            user.save()
+        return user
+
+class RecruiterRegistrationForm(CustomUserCreationForm):
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'recruiter'
+        if commit:
+            user.save()
+        return user

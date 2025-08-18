@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load project_filters %}
 
 {% block title %}{{ developer.user.username }} - Profile{% endblock %}
 
@@ -11,7 +12,6 @@
         <p><strong>Location:</strong> {{ developer.location }}</p>
         <p><strong>Bio:</strong> {{ developer.bio }}</p>
         <p><strong>Experience:</strong> {{ developer.experience }} years</p>
-
 
         <h4>Skills</h4>
         <div>
@@ -33,19 +33,26 @@
         {% if developer.video_intro %}
         <div class="mb-3">
             <h4>Video Introduction</h4>
-            <video controls style="max-width: 100%; height: auto;">
-                <source src="{{ developer.video_intro.url }}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
+            <a href="{{ developer.video_intro.url }}" target="_blank" class="btn btn-outline-primary">
+                <i class="bi bi-play-circle"></i> Watch Video Introduction
+            </a>
         </div>
         {% endif %}
 
-        <h4>Projects</h4>
+        <!-- Projects Section with Management -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Projects</h4>
+            {% if user.is_authenticated and user == developer.user %}
+            <a href="{% url 'add-project' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Add Project
+            </a>
+            {% endif %}
+        </div>
+
         <div class="row">
             {% for project in developer.user.projects.all %}
             <div class="col-md-6 mb-4">
                 <div class="card h-100">
-                    <!-- Project Image - FIXED: Added check for image existence -->
                     {% if project.project_image %}
                     <img src="{{ project.project_image.url }}" class="card-img-top" alt="{{ project.title }}"
                         style="height: 200px; object-fit: cover;">
@@ -60,24 +67,56 @@
                         <h5 class="card-title">{{ project.title }}</h5>
                         <p class="card-text">{{ project.description|truncatewords:20 }}</p>
 
+
+
                         {% if project.technologies %}
                         <div class="mb-2">
+                            {% for tech in project|get_technologies %}
+                            <span class="badge bg-secondary me-1 mb-1">{{ tech }}</span>
+                            {% empty %}
+                            <!-- Fallback: try direct access -->
                             {% for tech in project.technologies %}
-                            <span class="badge bg-secondary me-1">{{ tech }}</span>
+                            <span class="badge bg-secondary me-1 mb-1">{{ tech }}</span>
+                            {% endfor %}
                             {% endfor %}
                         </div>
                         {% endif %}
 
-                        <div class="btn-group w-100" role="group">
-                            {% if project.github_url %}
-                            <a href="{{ project.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
-                                <i class="bi bi-github"></i> Code
-                            </a>
-                            {% endif %}
-                            {% if project.live_url %}
-                            <a href="{{ project.live_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-arrow-up-right-square"></i> Live Demo
-                            </a>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group" role="group">
+                                {% if project.github_url %}
+                                <a href="{{ project.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
+                                    <i class="bi bi-github"></i> Code
+                                </a>
+                                {% endif %}
+                                {% if project.live_url %}
+                                <a href="{{ project.live_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-arrow-up-right-square"></i> Live Demo
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <!-- Project Management Buttons (Only for Project Owner) -->
+                            {% if user.is_authenticated and user == developer.user %}
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                    id="projectActions{{ project.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="projectActions{{ project.id }}">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'edit-project' project.id %}">
+                                            <i class="bi bi-pencil me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item text-danger delete-project-btn"
+                                            data-project-id="{{ project.id }}" data-project-title="{{ project.title }}">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
                             {% endif %}
                         </div>
                     </div>
@@ -86,7 +125,14 @@
             {% empty %}
             <div class="col-12">
                 <div class="alert alert-info">
-                    <p class="mb-0">No projects listed yet.</p>
+                    <p class="mb-0">
+                        {% if user.is_authenticated and user == developer.user %}
+                        No projects listed yet. <a href="{% url 'add-project' %}" class="alert-link">Add your first
+                            project</a>!
+                        {% else %}
+                        No projects listed yet.
+                        {% endif %}
+                    </p>
                 </div>
             </div>
             {% endfor %}
@@ -105,7 +151,7 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Contact Info</h5>
-                <p><strong>Phone:</strong> {{ developer.phone_number|default:"N/A" }}</p>
+                <p><strong>Phone:</strong> {{ developer.phone|default:"N/A" }}</p>
                 <p><strong>LinkedIn:</strong>
                     {% if developer.linkedin_url %}
                     <a href="{{ developer.linkedin_url }}" target="_blank">{{ developer.linkedin_url }}</a>
@@ -113,8 +159,7 @@
                     N/A
                     {% endif %}
                 </p>
-                <p><strong>Email:</strong> {{developer.email}} </p>
-
+                <p><strong>Email:</strong> {{ developer.email }}</p>
 
                 <!-- GitHub Link -->
                 {% if developer.github_url %}
@@ -131,7 +176,7 @@
                 {% endif %}
 
                 <!-- Watchlist Button (for recruiters) -->
-                {% if user.is_authenticated and user.user_type == 'recruiter' %}
+                {% if user.is_authenticated and user.role == 'recruiter' %}
                 <form method="POST" action="{% url 'add-to-watchlist' developer.id %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-success w-100">
@@ -150,4 +195,90 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Project Confirmation Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProjectModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the project <strong id="projectTitleToDelete"></strong>?</p>
+                <div class="alert alert-warning">
+                    <small><i class="bi bi-info-circle me-1"></i>This action cannot be undone.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i>Delete Project
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteButtons = document.querySelectorAll('.delete-project-btn');
+        const modal = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
+        const projectTitleSpan = document.getElementById('projectTitleToDelete');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        let currentProjectId = null;
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                currentProjectId = this.dataset.projectId;
+                const projectTitle = this.dataset.projectTitle;
+                projectTitleSpan.textContent = projectTitle;
+                modal.show();
+            });
+        });
+
+        confirmBtn.addEventListener('click', function () {
+            if (!currentProjectId) return;
+
+            this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Deleting...';
+            this.disabled = true;
+
+            fetch(`/projects/${currentProjectId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        modal.hide();
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Failed to delete project');
+                        resetDeleteButton();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting project:', error);
+                    alert('An error occurred while deleting the project');
+                    resetDeleteButton();
+                });
+        });
+
+        function resetDeleteButton() {
+            confirmBtn.innerHTML = '<i class="bi bi-trash me-1"></i>Delete Project';
+            confirmBtn.disabled = false;
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+    });
+</script>
 {% endblock %}

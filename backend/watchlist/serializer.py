@@ -14,7 +14,7 @@ class WatchlistSerializer(serializers.ModelSerializer):
         read_only_fields = ['saved_at']
 
     def validate_recruiter(self, value):
-        if value.user_type != 'recruiter':
+        if value.role != 'recruiter':
             raise serializers.ValidationError("Only recruiters can create watchlist entries.")
         return value
 

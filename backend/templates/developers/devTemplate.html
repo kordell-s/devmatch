@@ -32,13 +32,14 @@
             <!-- View Profile Button -->
             <a href="{% url 'developer-detail' developer.id %}" class="btn btn-outline-primary mt-3">View Profile</a>
 
-            {% if user.is_authenticated and user.user_type == 'recruiter' %}
-            <form method="POST" action="{% url 'add-to-watchlist' developer.id %}" class="d-inline mt-2">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-bookmark"></i> Save
+            {% if user.is_authenticated and user.role == 'recruiter' %}
+            <div class="watchlist-btn-container mt-2" data-developer-id="{{ developer.id }}">
+                <button type="button" class="btn btn-outline-success watchlist-btn"
+                    data-developer-id="{{ developer.id }}" data-action="add">
+                    <i class="bi bi-bookmark-plus watchlist-icon"></i>
+                    <span class="watchlist-text">Save</span>
                 </button>
-            </form>
+            </div>
             {% endif %}
         </div>
     </div>

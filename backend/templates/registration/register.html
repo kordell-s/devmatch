@@ -1,54 +1,55 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - DevMatch{% endblock %}
+{% block title %}Choose Registration Type - DevMatch{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3>Register</h3>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" id="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="first_name" class="form-label">First Name</label>
-                        <input type="text" name="first_name" class="form-control" id="first_name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="last_name" class="form-label">Last Name</label>
-                        <input type="text" name="last_name" class="form-control" id="last_name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" id="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" id="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password2" class="form-label">Confirm Password</label>
-                        <input type="password" name="password2" class="form-control" id="password2" required>
-                    </div>
+    <div class="col-md-8">
+        <div class="text-center mb-5">
+            <h2>Join DevMatch</h2>
+            <p class="lead">Choose your account type to get started</p>
+        </div>
 
-                    <button type="submit" class="btn btn-primary">Register</button>
-                </form>
-                {% if errors %}
-                <div class="alert alert-danger mt-3">
-                    <ul>
-                        {% for field, error_list in errors.items %}
-                        <li>{{ field }}: {{ error_list|join:", " }}</li>
-                        {% endfor %}
-                    </ul>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-code-slash" style="font-size: 4rem; color: #007bff;"></i>
+                        <h4 class="mt-3">I'm a Developer</h4>
+                        <p class="text-muted">Showcase your skills, build your portfolio, and connect with recruiters
+                        </p>
+                        <ul class="list-unstyled text-start">
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Create detailed profile</li>
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Upload projects and resume</li>
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Get discovered by recruiters
+                            </li>
+                        </ul>
+                        <a href="{% url 'register_developer' %}" class="btn btn-primary btn-lg w-100">Register as
+                            Developer</a>
+                    </div>
                 </div>
-                {% endif %}
             </div>
+
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people-fill" style="font-size: 4rem; color: #28a745;"></i>
+                        <h4 class="mt-3">I'm a Recruiter</h4>
+                        <p class="text-muted">Find and hire talented developers for your team or projects</p>
+                        <ul class="list-unstyled text-start">
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Browse developer profiles</li>
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Create watchlists</li>
+                            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Access contact information</li>
+                        </ul>
+                        <a href="{% url 'register_recruiter' %}" class="btn btn-success btn-lg w-100">Register as
+                            Recruiter</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
         </div>
     </div>
 </div>

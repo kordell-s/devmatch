@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit {{ project.title }} - DevMatch{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="bi bi-pencil-square me-2"></i>Edit Project</h3>
+                    <p class="mb-0 text-muted">Update your project details</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            {{ form.title.label_tag }} <span class="text-danger">*</span>
+                            {{ form.title }}
+                            {% if form.title.help_text %}
+                            <div class="form-text">{{ form.title.help_text }}</div>
+                            {% endif %}
+                            {% if form.title.errors %}
+                            <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label_tag }} <span class="text-danger">*</span>
+                            {{ form.description }}
+                            {% if form.description.help_text %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                            {% endif %}
+                            {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.github_url.label_tag }}
+                                    {{ form.github_url }}
+                                    {% if form.github_url.help_text %}
+                                    <div class="form-text">{{ form.github_url.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.github_url.errors %}
+                                    <div class="text-danger">{{ form.github_url.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.live_url.label_tag }}
+                                    {{ form.live_url }}
+                                    {% if form.live_url.help_text %}
+                                    <div class="form-text">{{ form.live_url.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.live_url.errors %}
+                                    <div class="text-danger">{{ form.live_url.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.selected_technologies.label_tag }}
+                            <div class="technologies-container border rounded p-3"
+                                style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                                <input type="text" class="form-control mb-3" id="tech-search"
+                                    placeholder="Search technologies...">
+                                <div class="row" id="technologies-grid">
+                                    {% for choice in form.selected_technologies %}
+                                    <div class="col-md-6 col-lg-4 mb-2 tech-option">
+                                        <div class="form-check">
+                                            {{ choice.tag }}
+                                            <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                                {{ choice.choice_label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if form.selected_technologies.errors %}
+                            <div class="text-danger">{{ form.selected_technologies.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.custom_technology.label_tag }}
+                            {{ form.custom_technology }}
+                            <div class="form-text">Add any technologies not listed above, separated by commas</div>
+                            {% if form.custom_technology.errors %}
+                            <div class="text-danger">{{ form.custom_technology.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.project_image.label_tag }}
+                            {{ form.project_image }}
+                            {% if project.project_image %}
+                            <div class="form-text">
+                                Current image: <a href="{{ project.project_image.url }}" target="_blank">{{
+                                    project.project_image.name }}</a>
+                            </div>
+                            {% endif %}
+                            {% if form.project_image.help_text %}
+                            <div class="form-text">{{ form.project_image.help_text }}</div>
+                            {% endif %}
+                            {% if form.project_image.errors %}
+                            <div class="text-danger">{{ form.project_image.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'developer-detail' user.developer_profile.pk %}"
+                                class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Technology search functionality
+        const searchInput = document.getElementById('tech-search');
+        const techOptions = document.querySelectorAll('.tech-option');
+
+        searchInput.addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+
+            techOptions.forEach(option => {
+                const label = option.querySelector('label').textContent.toLowerCase();
+                if (label.includes(searchTerm)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

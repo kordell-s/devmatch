@@ -10,7 +10,7 @@ class Watchlist(models.Model):
     recruiter = models.ForeignKey(
         CustomUser, 
         on_delete=models.CASCADE,
-        limit_choices_to={'user_type': 'recruiter'},
+        limit_choices_to={'role': 'recruiter'},
         related_name='watchlisted_developers'
     )
     developer = models.ForeignKey(
@@ -29,7 +29,7 @@ class Watchlist(models.Model):
 
     def clean(self):
         super().clean()
-        if self.recruiter and self.recruiter.user_type != 'recruiter':
+        if self.recruiter and self.recruiter.role != 'recruiter':
             raise ValidationError({'recruiter': 'Only recruiters can create watchlist entries.'})
         
         if self.recruiter and self.developer and self.recruiter == self.developer.user:

@@ -1,17 +1,222 @@
 {% extends 'base.html' %}
 
-{% block title %}Watchlist{% endblock %}
+{% block title %}My Watchlist - DevMatch{% endblock %}
 
 {% block content %}
-<h1>Your Watchlist</h1>
-<ul>
-    {% for item in watchlist_items %}
-    <li>
-        <strong>{{ item.developer.user.username }}</strong> - {{ item.developer.bio }}
-        <a href="{% url 'devDetails' item.developer.id %}">View Profile</a>
-    </li>
-    {% empty %}
-    <p>Your watchlist is empty.</p>
-    {% endfor %}
-</ul>
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">My Watchlist</h1>
+
+        {% if watchlist_items %}
+        <div class="row">
+            {% for item in watchlist_items %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <!-- Profile Picture -->
+                        <img src="{% if item.developer.profile_picture %}{{ item.developer.profile_picture.url }}{% else %}https://via.placeholder.com/100x100?text=No+Photo{% endif %}"
+                            alt="{{ item.developer.user.username }}" class="rounded-circle mb-3"
+                            style="width: 100px; height: 100px; object-fit: cover;">
+
+                        <!-- Developer Name -->
+                        <h5 class="card-title">
+                            {{ item.developer.user.get_full_name|default:item.developer.user.username }}
+                        </h5>
+
+                        <!-- Bio -->
+                        <p class="card-text">{{ item.developer.bio|truncatewords:15|default:"No bio available." }}</p>
+
+                        <!-- Skills -->
+                        <div class="mb-3">
+                            {% for skill in item.developer.skills %}
+                            <span class="badge bg-primary me-1 mb-1">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Saved Date -->
+                        <p class="text-muted small">Saved: {{ item.saved_at|date:"M d, Y" }}</p>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{% url 'developer-detail' item.developer.id %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye"></i> View Profile
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-from-watchlist-btn"
+                                data-developer-id="{{ item.developer.id }}"
+                                data-developer-name="{{ item.developer.user.get_full_name|default:item.developer.user.username }}">
+                                <i class="bi bi-bookmark-x"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center">
+            <div class="alert alert-info">
+                <h4><i class="bi bi-bookmark"></i> Your watchlist is empty</h4>
+                <p>Start building your watchlist by browsing developers and clicking the "Save" button on their
+                    profiles.</p>
+                <a href="{% url 'developers-list' %}" class="btn btn-primary">
+                    <i class="bi.bi-search"></i> Browse Developers
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="removeConfirmModal" tabindex="-1" aria-labelledby="removeConfirmModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Removal
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove <strong id="developerNameToRemove"></strong> from your watchlist?</p>
+                <div class="alert alert-warning">
+                    <small><i class="bi bi-info-circle me-1"></i>This action cannot be undone, but you can always add
+                        them back later.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveBtn">
+                    <i class="bi bi-trash me-1"></i>Remove from Watchlist
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const removeButtons = document.querySelectorAll('.remove-from-watchlist-btn');
+        const modal = new bootstrap.Modal(document.getElementById('removeConfirmModal'));
+        const developerNameSpan = document.getElementById('developerNameToRemove');
+        const confirmBtn = document.getElementById('confirmRemoveBtn');
+        let currentDeveloperId = null;
+        let currentDeveloperName = null;
+
+        // Add click listeners to all remove buttons
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                currentDeveloperId = this.dataset.developerId;
+                currentDeveloperName = this.dataset.developerName;
+                developerNameSpan.textContent = currentDeveloperName;
+                modal.show();
+            });
+        });
+
+        // Handle confirmation
+        confirmBtn.addEventListener('click', function () {
+            if (!currentDeveloperId) return;
+
+            // Show loading state
+            confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Removing...';
+            confirmBtn.disabled = true;
+
+            // Make AJAX request to remove from watchlist
+            fetch(`/watchlist/remove/${currentDeveloperId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        showToast(`${currentDeveloperName} has been removed from your watchlist!`, 'success');
+
+                        // Hide modal
+                        modal.hide();
+
+                        // Refresh the page after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(data.message || 'Failed to remove developer from watchlist', 'error');
+                        resetConfirmButton();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error removing from watchlist:', error);
+                    showToast('An error occurred while removing the developer', 'error');
+                    resetConfirmButton();
+                });
+        });
+
+        // Reset modal when closed
+        document.getElementById('removeConfirmModal').addEventListener('hidden.bs.modal', function () {
+            resetConfirmButton();
+            currentDeveloperId = null;
+            currentDeveloperName = null;
+        });
+
+        function resetConfirmButton() {
+            confirmBtn.innerHTML = '<i class="bi bi-trash me-1"></i>Remove from Watchlist';
+            confirmBtn.disabled = false;
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        function showToast(message, type) {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+            toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        `;
+            toast.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                ${message}
+            </div>
+        `;
+
+            document.body.appendChild(toast);
+
+            // Remove toast after delay
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    });
+
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+    document.head.appendChild(style);
+</script>
 {% endblock %}
